@@ -18,7 +18,6 @@ lang_test = lambda src, trg, start, end: (language(start, src) and language(end,
 
 def generate_source_language_categories(semcat, conceptnet_path, lang_source):
     categories = {concept: set([concept]) for concept in semcat.vocab.keys()}
-    root_terms = {concept: set([concept]) for concept in semcat.vocab.keys()}
     category_keys = list(semcat.vocab.keys())
 
     logging.info("Gathering related and similar terms...")
@@ -26,8 +25,9 @@ def generate_source_language_categories(semcat, conceptnet_path, lang_source):
     with ConceptNet(conceptnet_path) as f:
         for relation, start, end, weight in f:
             if i % 1000000 == 0:
-                logging.info(f"{i} lines processed...")
-            if language(start, lang_source) and language(end, lang_source) and weight >= 1.0:
+                logging.info(f"[1/4] {i} lines processed...")
+            # Language test
+            if lang_test(lang_source, lang_source, start, end):
                 start_token = extract_token(start)
                 end_token = extract_token(end)
                 if relation == "/r/RelatedTo" or relation == "/r/Synonym":
@@ -35,31 +35,53 @@ def generate_source_language_categories(semcat, conceptnet_path, lang_source):
                         categories[start_token].add(end_token)
                     if end_token in category_keys:
                         categories[end_token].add(start_token)
+            i += 1
+    return categories
 
-                if relation == "/r/FormOf" or relation == "/r/DerivedFrom":
-                    if start_token in category_keys:
-                        categories[start_token].add(end_token)
-                        root_terms[start_token].add(end_token)
+
+def generate_intermediate_language_categories(semcat, conceptnet_path, lang_source, lang_mid, lang_target, source):
+    categories_from_source = {concept: set() for concept in semcat.vocab.keys()}
+    categories_to_target = {concept: set() for concept in semcat.vocab.keys()}
+
+    logging.info("Generating intermediate language categories...")
+    i = 0
+    with ConceptNet(conceptnet_path) as f:
+        for relation, start, end, weight in f:
+            if i % 1000000 == 0:
+                logging.info(f"[2/4] {i} lines processed...")
+
+            if lang_test(lang_source, lang_mid, start, end):
+                start_token = extract_token(start)
+                end_token = extract_token(end)
+                if relation == "/r/RelatedTo" or relation == "/r/Synonym":
+                    for key in source:
+                        for item in list(source[key]):
+                            if start_token == item:
+                                categories_from_source[key].add(end_token)
+                            if end_token == item:
+                                categories_from_source[key].add(start_token)
             i += 1
 
-    # i = 0
-    # logging.info("Resolving root terms...")
-    # with ConceptNet(conceptnet_path) as f:
-    #     for relation, start, end, weight in f:
-    #         if i % 1000000 == 0:
-    #             logging.info(f"{i} lines processed...")
-    #         if language(start, lang_source) and language(end, lang_source) and weight >= 1.0:
-    #             start_token = extract_token(start)
-    #             end_token = extract_token(end)
-    #             if relation == "/r/RelatedTo" or relation == "/r/Synonym":
-    #                 for key in root_terms:
-    #                     for item in list(root_terms[key]):
-    #                         if start_token == item:
-    #                             categories[key].add(end_token)
-    #                         if end_token == item:
-    #                             categories[key].add(start_token)
-    #         i += 1
-    return categories
+    logging.info("Generating target language categories from intermediate categories...")
+
+    i = 0
+    with ConceptNet(conceptnet_path) as f:
+        for relation, start, end, weight in f:
+            if i % 1000000 == 0:
+                logging.info(f"[3/4] {i} lines processed...")
+
+            if lang_test(lang_mid, lang_target, start, end):
+                start_token = extract_token(start)
+                end_token = extract_token(end)
+                if relation == "/r/RelatedTo" or relation == "/r/Synonym":
+                    for key in categories_from_source:
+                        for item in list(categories_from_source[key]):
+                            if start_token == item:
+                                categories_to_target[key].add(end_token)
+                            if end_token == item:
+                                categories_to_target[key].add(start_token)
+            i += 1
+    return categories_to_target
 
 
 def generate_target_language_categories(semcat, conceptnet_path, lang_source, lang_target, source_categories):
@@ -70,7 +92,7 @@ def generate_target_language_categories(semcat, conceptnet_path, lang_source, la
     with ConceptNet(conceptnet_path) as f:
         for relation, start, end, weight in f:
             if i % 1000000 == 0:
-                logging.info(f"{i} lines processed...")
+                logging.info(f"[4/4] {i} lines processed...")
             if lang_test(lang_source, lang_target, start, end):
                 if relation == "/r/RelatedTo" or relation == "/r/Synonym":
                     start_token = extract_token(start)
@@ -91,7 +113,7 @@ def run():
     parser.add_argument("--semcat_path", type=str, required=True)
     parser.add_argument("--conceptnet_path", type=str, required=True)
     # --source_categories="categories/semcat_en-en.json"
-    parser.add_argument("--source_categories", type=str, required=False, default=None)
+    # parser.add_argument("--source_categories", type=str, required=False, default=None)
     parser.add_argument("--source_language", type=str, required=False, default="en")
     parser.add_argument("--intermediate_language", type=str, required=False, default="en")
     parser.add_argument("--target_language", type=str, required=False, default="en")
@@ -99,8 +121,8 @@ def run():
 
     lang_source = args.source_language
     lang_target = args.target_language
-    intermediate_language = args.intermediate_language
-    source_categories = args.source_categories
+    lang_intermediate = args.intermediate_language
+    # source_categories = args.source_categories
     semcat_path = args.semcat_path  # "data/semcat/"
     conceptnet_path = args.conceptnet_path  # "data/conceptnet-assertions-5.7.0.csv.gz"
 
@@ -108,24 +130,25 @@ def run():
         os.mkdir("categories")
 
     semcat = SemCat(semcat_path)
-    if source_categories is None:
-        source_categories = generate_source_language_categories(semcat, conceptnet_path, lang_source)
-        fd = open(f"categories/semcat_{lang_source}-{lang_source}.json", mode="w", encoding="utf8")
-        for key in source_categories:
-            source_categories[key] = list(source_categories[key])
-        json.dump(source_categories, fd, indent=2)
-        fd.close()
-    else:
-        fd = open(source_categories, mode="r", encoding="utf8")
-        source_categories = json.load(fd)
-        fd.close()
-
+    source_categories = generate_source_language_categories(semcat, conceptnet_path, lang_source)
+    validation_categories = generate_intermediate_language_categories(semcat, conceptnet_path, lang_source,
+                                                                      lang_intermediate, lang_target,
+                                                                      source_categories)
     target_categories = generate_target_language_categories(semcat, conceptnet_path,
                                                             lang_source, lang_target, source_categories)
+    output_categories = {concept: set() for concept in semcat.vocab.keys()}
+
+    for key in validation_categories:
+        c1: set
+        c1 = validation_categories[key]
+        c2: set
+        c2 = target_categories[key]
+        output_categories[key] = c1.intersection(c2)
+
     fd = open(f"categories/semcat_{lang_source}-{lang_target}.json", mode="w", encoding="utf8")
-    for key in target_categories:
-        target_categories[key] = list(target_categories[key])
-    json.dump(target_categories, fd, indent=2)
+    for key in output_categories:
+        output_categories[key] = list(output_categories[key])
+    json.dump(output_categories, fd, indent=2)
     fd.close()
 
 
