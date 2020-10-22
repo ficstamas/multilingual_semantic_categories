@@ -1,0 +1,40 @@
+SEARCH_TERMS = {
+    "carpart": "car",
+    "clothe": "clothes",
+    "cooking_tool": "cooking"
+}
+
+ALLOWED_RELATIONS = {
+    "adjectives_for_people": None,
+    "animal": ["/r/RelatedTo", "/r/Synonym", "/r/IsA"],
+    "april_fool": ["/r/RelatedTo", "/r/FormOf", "/r/Synonym"],
+    "art": ["/r/RelatedTo", "/r/IsA", "/r/HasProperty"],
+    "astronomy": ["/r/RelatedTo", "/r/Synonym", "/r/IsA"],
+    "baseball": ["/r/RelatedTo", "/r/Synonym", "/r/IsA"],
+    "bathroom": ["/r/AtLocation", "/r/UsedFor", "/r/PartOf", "/r/RelatedTo"],
+    "beach": ["/r/AtLocation", "/r/RelatedTo", "/r/Synonym"],
+    "big": ["/r/RelatedTo", "/r/Synonym", "/r/SimilarTo"],
+    "biome": ["/r/RelatedTo", "/r/Synonym", "/r/IsA"],
+    "bird": ["/r/RelatedTo", "/r/Synonym", "/r/IsA", "/r/CapableOf", "/r/PartOf"],
+    "birthday": ["/r/RelatedTo", "/r/Synonym"],
+    "boat": ["/r/AtLocation", "/r/RelatedTo", "/r/Synonym", "/r/IsA", "/r/AtLocation"],
+    "body_of_water": ["/r/IsA", "/r/RelatedTo"],
+    "body": ["/r/RelatedTo", "/r/PartOf", "/r/AtLocation", "/r/Antonym"],
+    "building": ["/r/RelatedTo", "/r/PartOf", "/r/AtLocation", "/r/IsA"],
+    "camping": ["/r/RelatedTo", "/r/Synonym"],
+    "car": ["/r/IsA", "/r/CapableOf"],
+    "carpart": ["/r/PartOf"],
+    "carnival": ["/r/AtLocation", "/r/RelatedTo", "/r/Synonym", "/r/IsA"],
+    "castle": ["/r/AtLocation", "/r/RelatedTo", "/r/Synonym"],
+    "cat": ["/r/AtLocation", "/r/RelatedTo", "/r/Synonym", "/r/IsA"],
+    "christmas": ["/r/RelatedTo", "/r/Synonym"],
+    "circus": ["/r/RelatedTo", "/r/Synonym", "/r/AtLocation"],
+    "clothe": ["/r/RelatedTo", "/r/Synonym", "/r/IsA"],
+    "color": ["/r/RelatedTo", "/r/IsA", "/r/MannerOf"],
+    "computer": ["/r/RelatedTo", "/r/Synonym", "/r/PartOf", "/r/UsedFor", "/r/IsA", "/r/AtLocation", "/r/CapableOf"],
+    "constitution": ["/r/RelatedTo", "/r/Synonym"],
+    "container": ["/r/RelatedTo", "/r/Synonym", "/r/IsA"],
+    "cooking_tool": ["/r/UsedFor"],
+    "cooking": ["/r/HasContext", "/r/IsA", "/r/RelatedTo", "/r/Synonym"],
+    "country": ["/r/IsA"]
+}
