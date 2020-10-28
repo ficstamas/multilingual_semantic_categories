@@ -5,6 +5,8 @@ import json
 from argparse import ArgumentParser
 import os
 import logging
+from relations import ALLOWED_RELATIONS, SEARCH_TERMS_INV
+import asyncio
 
 logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s - %(levelname)s - %(message)s',
@@ -16,9 +18,22 @@ extract_token = lambda inp: inp.split("/")[3]
 lang_test = lambda src, trg, start, end: (language(start, src) and language(end, trg)) or (language(end, src) and language(start, trg))
 
 
-def generate_source_language_categories(semcat, conceptnet_path, lang_source):
-    categories = {concept: set([concept]) for concept in semcat.vocab.keys()}
-    category_keys = list(semcat.vocab.keys())
+def generate_source_language_categories(conceptnet_path, lang_source):
+    """
+    Generates semantic categories in lang_source language
+    Parameters
+    ----------
+    conceptnet_path
+        Path to conceptnet
+    lang_source
+        Source language
+    Returns
+    -------
+        dict:
+            Generated categories
+    """
+    categories = {concept: set([concept]) for concept in ALLOWED_RELATIONS.keys()}
+    category_keys = list(ALLOWED_RELATIONS.keys())
 
     logging.info("Gathering related and similar terms...")
     i = 0
@@ -30,18 +45,58 @@ def generate_source_language_categories(semcat, conceptnet_path, lang_source):
             if lang_test(lang_source, lang_source, start, end):
                 start_token = extract_token(start)
                 end_token = extract_token(end)
-                if relation == "/r/RelatedTo" or relation == "/r/Synonym":
-                    if start_token in category_keys:
-                        categories[start_token].add(end_token)
-                    if end_token in category_keys:
-                        categories[end_token].add(start_token)
+
+                if start_token in ALLOWED_RELATIONS:
+                    if relation in ALLOWED_RELATIONS[start_token]:
+                        if relation == "/r/RelatedTo" and weight >= 1.0:
+                            categories[start_token].add(end_token)
+                        elif relation != "/r/RelatedTo":
+                            categories[start_token].add(end_token)
+                if start_token in SEARCH_TERMS_INV:
+                    if relation in ALLOWED_RELATIONS[SEARCH_TERMS_INV[start_token]]:
+                        if relation == "/r/RelatedTo" and weight >= 1.0:
+                            categories[SEARCH_TERMS_INV[start_token]].add(end_token)
+                        elif relation != "/r/RelatedTo":
+                            categories[SEARCH_TERMS_INV[start_token]].add(end_token)
+
+                if end_token in ALLOWED_RELATIONS:
+                    if relation in ALLOWED_RELATIONS[end_token]:
+                        if relation == "/r/RelatedTo" and weight >= 1.0:
+                            categories[end_token].add(start_token)
+                        elif relation != "/r/RelatedTo":
+                            categories[end_token].add(start_token)
+                if end_token in SEARCH_TERMS_INV:
+                    if relation in ALLOWED_RELATIONS[SEARCH_TERMS_INV[end_token]]:
+                        if relation == "/r/RelatedTo" and weight >= 1.0:
+                            categories[SEARCH_TERMS_INV[end_token]].add(start_token)
+                        elif relation != "/r/RelatedTo":
+                            categories[SEARCH_TERMS_INV[end_token]].add(start_token)
+
             i += 1
     return categories
 
 
-def generate_intermediate_language_categories(semcat, conceptnet_path, lang_source, lang_mid, lang_target, source):
-    categories_from_source = {concept: set() for concept in semcat.vocab.keys()}
-    categories_to_target = {concept: set() for concept in semcat.vocab.keys()}
+async def generate_intermediate_language_categories(conceptnet_path, lang_source, lang_mid, lang_target, source):
+    """
+    Translates semantic categories to an intermediate language, and further transforms it to the target language
+    Parameters
+    ----------
+    conceptnet_path
+        Path to ConceptNet
+    lang_source
+        Source Language
+    lang_mid
+        Middle Language
+    lang_target
+        Target Language
+    source
+        Semantic Categories in source language
+    Returns
+    -------
+
+    """
+    categories_from_source = {concept: set() for concept in ALLOWED_RELATIONS.keys()}
+    categories_to_target = {concept: set() for concept in ALLOWED_RELATIONS.keys()}
 
     logging.info("Generating intermediate language categories...")
     i = 0
@@ -84,8 +139,21 @@ def generate_intermediate_language_categories(semcat, conceptnet_path, lang_sour
     return categories_to_target
 
 
-def generate_target_language_categories(semcat, conceptnet_path, lang_source, lang_target, source_categories):
-    categories = {concept: set() for concept in semcat.vocab.keys()}
+async def generate_target_language_categories(conceptnet_path, lang_source, lang_target, source_categories):
+    """
+    Translates semantic categories from source language to target language
+    Parameters
+    ----------
+    conceptnet_path
+    lang_source
+    lang_target
+    source_categories
+
+    Returns
+    -------
+
+    """
+    categories = {concept: set() for concept in ALLOWED_RELATIONS.keys()}
     logging.info("Generating target language categories")
     i = 0
 
@@ -107,13 +175,34 @@ def generate_target_language_categories(semcat, conceptnet_path, lang_source, la
     return categories
 
 
+async def parallelization(conceptnet_path, lang_source, lang_intermediate, lang_target, source_categories):
+    """
+    It would run both translations in parallel, but due to the resource it can not be happen
+    Parameters
+    ----------
+    conceptnet_path
+    lang_source
+    lang_intermediate
+    lang_target
+    source_categories
+
+    Returns
+    -------
+
+    """
+    results = await asyncio.gather(generate_intermediate_language_categories(conceptnet_path, lang_source,
+                                                                             lang_intermediate, lang_target,
+                                                                             source_categories),
+                                   generate_target_language_categories(conceptnet_path, lang_source, lang_target,
+                                                                       source_categories)
+                                   )
+    return results[0], results[1]
+
+
 def run():
     parser = ArgumentParser(description='Glove interpretibility')
 
-    parser.add_argument("--semcat_path", type=str, required=True)
     parser.add_argument("--conceptnet_path", type=str, required=True)
-    # --source_categories="categories/semcat_en-en.json"
-    # parser.add_argument("--source_categories", type=str, required=False, default=None)
     parser.add_argument("--source_language", type=str, required=False, default="en")
     parser.add_argument("--intermediate_language", type=str, required=False, default="en")
     parser.add_argument("--target_language", type=str, required=False, default="en")
@@ -122,21 +211,21 @@ def run():
     lang_source = args.source_language
     lang_target = args.target_language
     lang_intermediate = args.intermediate_language
-    # source_categories = args.source_categories
-    semcat_path = args.semcat_path  # "data/semcat/"
-    conceptnet_path = args.conceptnet_path  # "data/conceptnet-assertions-5.7.0.csv.gz"
+    conceptnet_path = args.conceptnet_path
 
     if not os.path.exists("categories/"):
         os.mkdir("categories")
 
-    semcat = SemCat(semcat_path)
-    source_categories = generate_source_language_categories(semcat, conceptnet_path, lang_source)
-    validation_categories = generate_intermediate_language_categories(semcat, conceptnet_path, lang_source,
-                                                                      lang_intermediate, lang_target,
-                                                                      source_categories)
-    target_categories = generate_target_language_categories(semcat, conceptnet_path,
-                                                            lang_source, lang_target, source_categories)
-    output_categories = {concept: set() for concept in semcat.vocab.keys()}
+    # Generating categories
+    source_categories = generate_source_language_categories(conceptnet_path, lang_source)
+    # Translating categories to a middle and target language
+    validation_categories, target_categories = asyncio.run(
+        parallelization(conceptnet_path, lang_source, lang_intermediate, lang_target, source_categories)
+    )
+
+    # Producing output categories by taking the intersection of the category words of target language and
+    # the indirectly translated one
+    output_categories = {concept: set() for concept in ALLOWED_RELATIONS.keys()}
 
     for key in validation_categories:
         c1: set
@@ -145,7 +234,8 @@ def run():
         c2 = target_categories[key]
         output_categories[key] = c1.intersection(c2)
 
-    fd = open(f"categories/semcat_{lang_source}-{lang_target}.json", mode="w", encoding="utf8")
+    # Saving to file
+    fd = open(f"categories/semcat_{lang_source}-{lang_intermediate}-{lang_target}.json", mode="w", encoding="utf8")
     for key in output_categories:
         output_categories[key] = list(output_categories[key])
     json.dump(output_categories, fd, indent=2)

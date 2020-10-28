@@ -133,4 +133,4 @@ dmypy.json
 
 # Folder which is containing large amount of data
 data/
-categories/
+# categories/

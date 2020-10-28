@@ -9,6 +9,7 @@ Removed
 - thanksgiving
 - valentine
 - virtues
+- april_fool
 Renamed
 - grammar -> linguistics
 - music_theory -> music
@@ -29,24 +30,25 @@ SEARCH_TERMS = {
     "positive_word": "good",
 }
 
+SEARCH_TERMS_INV = {SEARCH_TERMS[key]: key for key in SEARCH_TERMS}
+
 ALLOWED_RELATIONS = {
     "adjectives_for_people": ["/r/HasProperty"],
     "animal": ["/r/RelatedTo", "/r/Synonym", "/r/IsA"],
-    "april_fool": ["/r/RelatedTo", "/r/FormOf", "/r/Synonym"],
     "art": ["/r/RelatedTo", "/r/IsA", "/r/HasProperty"],
     "astronomy": ["/r/RelatedTo", "/r/Synonym", "/r/IsA"],
     "baseball": ["/r/RelatedTo", "/r/Synonym", "/r/IsA"],
     "bathroom": ["/r/AtLocation", "/r/UsedFor", "/r/PartOf", "/r/RelatedTo"],
     "beach": ["/r/AtLocation", "/r/RelatedTo", "/r/Synonym"],
     "big": ["/r/RelatedTo", "/r/Synonym", "/r/SimilarTo"],
-    "biome": ["/r/RelatedTo", "/r/Synonym", "/r/IsA"],
+    # "biome": ["/r/RelatedTo", "/r/Synonym", "/r/IsA"],
     "bird": ["/r/RelatedTo", "/r/Synonym", "/r/IsA", "/r/CapableOf", "/r/PartOf"],
     "birthday": ["/r/RelatedTo", "/r/Synonym"],
     "boat": ["/r/AtLocation", "/r/RelatedTo", "/r/Synonym", "/r/IsA", "/r/AtLocation"],
     "body_of_water": ["/r/IsA", "/r/RelatedTo"],
     "body": ["/r/RelatedTo", "/r/PartOf", "/r/AtLocation", "/r/Antonym"],
     "building": ["/r/RelatedTo", "/r/PartOf", "/r/AtLocation", "/r/IsA"],
-    "camping": ["/r/RelatedTo", "/r/Synonym"],
+    # "camping": ["/r/RelatedTo", "/r/Synonym"],
     "car": ["/r/IsA", "/r/CapableOf"],
     "carpart": ["/r/PartOf"],
     "carnival": ["/r/AtLocation", "/r/RelatedTo", "/r/Synonym", "/r/IsA"],
@@ -82,7 +84,7 @@ ALLOWED_RELATIONS = {
     "linguistics": ["/r/DerivedFrom", "/r/RelatedTo", "/r/HasContext"],
     "happy": ["/r/MotivatedByGoal", "/r/RelatedTo"],
     "holiday": ["/r/IsA", "/r/RelatedTo"],
-    "house": ["/r/RelatedTo", "/r/IsA", "/r/HasA", "/r/AtLocation", "/r/PartOf", "/r/UsedFor"],
+    # "house": ["/r/RelatedTo", "/r/IsA", "/r/HasA", "/r/AtLocation", "/r/PartOf", "/r/UsedFor"],
     "housing": ["/r/IsA", "/r/RelatedTo"],
     "insect": ["/r/IsA", "/r/RelatedTo"],
     "job": ["/r/RelatedTo", "/r/IsA"],
@@ -99,9 +101,9 @@ ALLOWED_RELATIONS = {
     "money": ["/r/RelatedTo", "/r/AtLocation", "/r/IsA"],
     "musical_instrument": ["/r/RelatedTo", "/r/AtLocation", "/r/IsA"],
     "music": ["/r/RelatedTo", "/r/IsA", "/r/HasProperty", "/r/ReceivesAction"],
-    "mythical_monster": ["/r/IsA"],
+    # "mythical_monster": ["/r/IsA"],
     "negative_word": ["/r/HasProperty", "/r/RelatedTo"],
-    "new_year": ["/r/RelatedTo"],
+    # "new_year": ["/r/RelatedTo"],
     "ocean": ["/r/RelatedTo", "/r/AtLocation", "/r/UsedFor"],
     "office": ["/r/RelatedTo", "/r/AtLocation", "/r/IsA"],
     "people": ["/r/RelatedTo", "/r/CapableOf", "/r/IsA", "/r/Desires", "/r/ReceivesAction", "/r/UsedFor"],
@@ -111,12 +113,12 @@ ALLOWED_RELATIONS = {
     "post_office": ["/r/AtLocation", "/r/RelatedTo", "/r/UsedFor"],
     "reptile": ["/r/IsA", "/r/RelatedTo"],
     "restaurant": ["/r/RelatedTo", "/r/AtLocation", "/r/IsA"],
-    "roadway": ["/r/IsA", "/r/RelatedTo"],
+    # "roadway": ["/r/IsA", "/r/RelatedTo"],
     "rock": ["/r/IsA", "/r/RelatedTo", "/r/AtLocation"],
     "room": ["/r/IsA", "/r/RelatedTo", "/r/AtLocation"],
     "school": ["/r/IsA", "/r/RelatedTo", "/r/AtLocation", "/r/UsedFor"],
     "science": ["/r/IsA", "/r/RelatedTo", "/r/DerivedFrom", "/r/UsedFor"],
-    "sewing": ["/r/RelatedTo", "/r/IsA", "/r/Causes"],
+    # "sewing": ["/r/RelatedTo", "/r/IsA", "/r/Causes"],
     "shape": ["/r/IsA"],
     "sport": ["/r/IsA"],
     "store": ["/r/AtLocation", "/r/RelatedTo", "/r/IsA"],
